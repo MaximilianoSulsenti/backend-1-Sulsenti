@@ -56,3 +56,4 @@ export default class CartManager {
         return cart;
     }
 }
+
