@@ -23,7 +23,7 @@ export default class CartManager {
     saveCarts() {
         fs.writeFileSync(this.path, JSON.stringify({ data: this.carts }, null, 2));
     }
-
+    
     getCarts() {
         return this.carts;
     }
