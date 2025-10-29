@@ -78,7 +78,6 @@ if (productManager.getProducts().length === 0) {
 }
 
  // endpoints de productos por id y para obtener todos los productos
-
 app.get("/product", (req, res) => {
     res.status(200).json({ payload: productManager.getProducts() });
 });
