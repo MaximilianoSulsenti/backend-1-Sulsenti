@@ -34,16 +34,18 @@ export default class ProductManager {
 
     // crea un nuevo producto 
     addProduct(product) {
-       const { description, stock, precio, esDescuento} = product;
+       const { descripcion, stock, precio} = product;
 
         // valida todos los campos obligatorios
-        if (!description || stock === undefined || precio === undefined || esDescuento === undefined) {
+        if (!descripcion || stock === undefined || precio === undefined) {
             throw new Error("Faltan campos obligatorios al crear el producto");
         }
 
-        // valida tipos de datos
-         if (typeof description !== "string" || typeof stock !== "number" || typeof precio !== "number" || typeof esDescuento !== "boolean") {
-            throw new Error("los tipos de datos son incorrectos");
+        const stockNum = Number(stock);
+        const precioNum = Number(precio);
+
+        if (isNaN(stockNum) || isNaN(precioNum)) {
+            throw new Error("Stock y precio deben ser números válidos");
         }
 
         const newProduct = { id: uuidv4(), ...product };
