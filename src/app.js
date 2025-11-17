@@ -1,9 +1,29 @@
 import express from "express";
 import ProductManager from "./ProductManager.js";
 import CartManager from "./CartManager.js";
+import { Server } from "socket.io";
+import exphbs from "express-handlebars";
+import path from "path";
+import viewsRouter from "./routes/view.route.js";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+app.engine("handlebars", exphbs.engine({
+    defaultLayout: "main",
+    layoutsDir: path.join(__dirname, "views", "layouts")
+}));
+app.set("views", path.join(__dirname, "views"));
+app.set("view engine", "handlebars");
+
+app.use(express.static(path.join(__dirname, "public")));
+app.use("/", viewsRouter);
+
 
 const productManager = new ProductManager("./products.json");
 const cartManager = new CartManager("./carts.json");
@@ -92,6 +112,10 @@ app.get("/product/:productId", (req, res) => {
 app.post("/product", (req, res) => {
     try {
         const newProduct = productManager.addProduct(req.body);
+        
+         // notifica a todos los clientes conectados sobre el nuevo producto
+        io.emit("productos_actualizados", productManager.getProducts());
+
         res.status(201).json({ message: "Producto creado ", payload: newProduct });
     } catch (error) {
         res.status(404).json({ message: error.message });
@@ -101,12 +125,18 @@ app.post("/product", (req, res) => {
 app.put("/product/:productId", (req, res) => {
     const updated = productManager.updateProduct(req.params.productId, req.body);
     if (!updated) return res.status(404).json({ msg: "Producto no encontrado" });
+
+    io.emit("productos_actualizados", productManager.getProducts());
+
     res.status(200).json({ message: "Producto actualizado", payload: updated });
 });
 
 app.delete("/product/:productId", (req, res) => {
     const deleted = productManager.deleteProduct(req.params.productId);
     if (!deleted) return res.status(404).json({ msg: "Producto no encontrado" });
+
+    io.emit("productos_actualizados", productManager.getProducts());
+
     res.status(200).json({ message: "Producto eliminado ", payload: deleted });
 });
 
@@ -129,6 +159,29 @@ app.post("/carts/:cartId/product/:productId", (req, res) => {
 });
 
 // inicializador del servidor
-app.listen(8080, () => {
+const server = app.listen(8080, () => {
     console.log("Servidor escuchando en puerto 8080");
+});
+
+const io = new Server(server);
+
+io.on("connection", (socket) => {
+    console.log("Cliente conectado:", socket.id);
+
+    // envia la lista de productos actualizada al cliente al conectarse 
+    socket.emit("productos_actualizados", productManager.getProducts());
+});
+
+io.on("connection", socket => {
+
+    socket.on("nuevo_producto", data => {
+        productManager.addProduct(data);
+        io.emit("productos_actualizados", productManager.getProducts());
+    });
+
+    socket.on("eliminar_producto", id => {
+        productManager.deleteProduct(id);
+        io.emit("productos_actualizados", productManager.getProducts());
+    });
+
 });
