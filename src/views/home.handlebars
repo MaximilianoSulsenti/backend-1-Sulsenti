@@ -1,0 +1,12 @@
+<h1>Listado de productos</h1>
+
+<ul>
+  {{#each productos}}
+    <li>
+      <strong>{{descripcion}}</strong> — ${{precio}}
+      {{#if esDescuento}}
+        <span style="color: red;">(Descuento)</span>
+      {{/if}}
+    </li>
+  {{/each}}
+</ul>
