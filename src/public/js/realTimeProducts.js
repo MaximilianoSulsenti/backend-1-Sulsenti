@@ -28,4 +28,4 @@ document.getElementById("form-delete").addEventListener("submit", e => {
     socket.emit("eliminar_producto", id);
 
     e.target.reset();
-});
+}); 
