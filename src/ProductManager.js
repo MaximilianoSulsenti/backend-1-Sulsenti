@@ -1,11 +1,81 @@
 import fs from "fs";
 import { v4 as uuidv4 } from "uuid";
 
+const productos = [
+    { 
+      descripcion: "Camiseta algodón",
+      stock: 25,
+      precio: 19.99,
+      esDescuento: false
+    },
+    { 
+      descripcion: "Pantalón jean",
+      stock: 12,
+      precio: 39.5,
+      esDescuento: true 
+    },
+    { 
+      descripcion: "Zapatillas deportivas",
+      stock: 30,
+      precio: 59.99,
+      esDescuento: false
+    },
+    { 
+      descripcion: "Gorra deportiva",
+      stock: 50,
+      precio: 12.0,
+      esDescuento: true
+    },
+    { 
+      descripcion: "Chaqueta impermeable",
+      stock: 8, 
+      precio: 89.9,
+      esDescuento: false
+    },
+    {
+      descripcion: "Calcetines pack 3",
+      stock: 100,
+      precio: 9.99,
+      esDescuento: true
+    },
+    {
+      descripcion: "Sudadera con capucha",
+      stock: 16,
+      precio: 49.99,
+      esDescuento: false
+    },
+    { 
+      descripcion: "Mochila urbana",
+      stock: 20,
+      precio: 34.75,
+      esDescuento: true
+    },
+    { 
+      descripcion: "Reloj deportivo",
+      stock: 7,
+      precio: 129.99,
+      esDescuento: false
+    },
+    {
+      descripcion: "Cinturón cuero",
+      stock: 40,
+      precio: 24.5,
+      esDescuento: true
+    }
+];
+
 export default class ProductManager {
     constructor(path) {
         this.path = path;
         this.products = [];
         this.loadProducts();
+
+      // Si el JSON está vacío → cargar productos iniciales
+        if (this.products.length === 0) {
+            console.log("⚠ JSON vacío → cargando productos iniciales...");
+            productos.forEach(p => this.addProduct(p));
+        }
+
     }
 
      // carga los productos desde el archivo

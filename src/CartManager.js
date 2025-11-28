@@ -2,8 +2,9 @@ import fs from "fs";
 import { v4 as uuidv4 } from "uuid";
 
 export default class CartManager {
-    constructor(path) {
+    constructor(path, productManager) {
         this.path = path;
+        this.productManager = productManager;
         this.carts = [];
         this.loadCarts();
     }
@@ -44,6 +45,7 @@ export default class CartManager {
     addProductToCart(cartId, productId) {
         const cart = this.carts.find(c => c.id === cartId);
         if (!cart) return null;
+
 
         const productInCart = cart.products.find(p => p.product === productId);
         if (productInCart) {
