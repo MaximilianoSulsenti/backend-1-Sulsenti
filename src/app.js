@@ -1,13 +1,18 @@
 import express from "express";
-import ProductManager from "./ProductManager.js";
-import CartManager from "./CartManager.js";
+import mongoose from "mongoose";
 import { Server } from "socket.io";
 import exphbs from "express-handlebars";
 import path from "path";
-import viewsRouter from "./routes/view.route.js";
-import productRouter from "./routes/product.route.js";
-import cartRouter from "./routes/cart.route.js";
 import { fileURLToPath } from "url";
+
+// Managers con mongoose
+import ProductManager from "./managers/ProductManager.js";
+import CartManager from "./managers/CartManager.js";
+
+// Routers
+import createProductRouter from "./routes/product.route.js";
+import createCartRouter from "./routes/cart.route.js";
+import createViewsRouter from "./routes/view.route.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -16,7 +21,7 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// static
+// Archivos estáticos
 app.use(express.static(path.join(__dirname, "public")));
 
 // Handlebars
@@ -24,40 +29,47 @@ app.engine("handlebars", exphbs.engine());
 app.set("view engine", "handlebars");
 app.set("views", path.join(__dirname, "views"));
 
+// conexion a Mongo DB
 
-const productManager = new ProductManager("./products.json");
-const cartManager = new CartManager("./carts.json", productManager);
+mongoose.connect("mongodb+srv://sulsentimaximiliano_db_user:TbfYqIvysujWgrp8@cluster0.tscagks.mongodb.net/")
+.then(() => {
+    console.log("Conectado a MongoDB");
+}).catch(err => {
+    console.error("Error al conectar a MongoDB:", err);
+});
 
-app.use("/api/products", productRouter);
-app.use("/api/carts", cartRouter);
+const productManager = new ProductManager();
+const cartManager = new CartManager();
 
-app.use("/", viewsRouter);
-
-// Servidor HTTP
+// conexion del servidor
 const PORT = 8080;
 const httpServer = app.listen(PORT, () =>
-  console.log(`Servidor en puerto ${PORT}`)
+  console.log(`Servidor escuchando en puerto ${PORT}`)
 );
 
-// Servidor Socket.io
 const io = new Server(httpServer);
 
-io.on("connection", socket => {
+// rutas con los managers correspondientes
+app.use("/api/products", createProductRouter(productManager, io));
+app.use("/api/carts", createCartRouter(cartManager));
+app.use("/", createViewsRouter(productManager));
+
+ // Socket.io para productos en tiempo real
+ io.on("connection", async socket => {
   console.log("Cliente conectado:", socket.id);
 
-  // Enviar lista inicial
-  socket.emit("productos_actualizados", productManager.getProducts());
+  // Enviar lista inicial desde Mongo
+  socket.emit("productos_actualizados", await productManager.getProducts());
 
-  // Crear nuevo producto
-  socket.on("nuevo_producto", data => {
-    productManager.addProduct(data);
-    io.emit("productos_actualizados", productManager.getProducts());
+  // Crear producto en tiempo real
+  socket.on("nuevo_producto", async data => {
+    await productManager.addProduct(data);
+    io.emit("productos_actualizados", await productManager.getProducts());
   });
 
   // Eliminar producto
-  socket.on("eliminar_producto", id => {
-    productManager.deleteProduct(id);
-    io.emit("productos_actualizados", productManager.getProducts());
+  socket.on("eliminar_producto", async id => {
+    await productManager.deleteProduct(id);
+    io.emit("productos_actualizados", await productManager.getProducts());
   });
-  
 });
