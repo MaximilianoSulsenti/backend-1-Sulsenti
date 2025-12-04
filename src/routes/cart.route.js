@@ -33,7 +33,7 @@ export default function createCartRouter(cartManager) {
             const cart = await cartManager.addProductToCart(req.params.cartId, req.params.productId);
 
             if (!cart)
-                return res.status(404).json({ msg: "Carrito no encontrado" });
+                return res.status(404).json({ msg: "Carrito o producto no encontrado" });
 
             res.status(200).json({message: "Producto agregado al carrito", payload: cart});
         } catch (error) {

@@ -9,23 +9,30 @@ export default class ProductManager {
   async getProductsPaginated({ limit = 10, page = 1, sort, query }) {
         const filter = {};
 
-        // Construcción dinámica del filtro
+        // FILTRO GENERAL
         if (query) {
-            const [field, value] = query.split(":");
-            filter[field] = value;
+            if (query === "disponible") filter.disponible = true;
+            else filter.categoria = query;
         }
 
         let sortOption = {};
         if (sort === "asc") sortOption = { price: 1 };
         if (sort === "desc") sortOption = { price: -1 };
 
-        return await productModel.paginate(filter, {
-            limit,
-            page,
-            sort: sortOption,
-            lean: true
-        });
-    }
+        const result = await productModel.paginate(filter, {limit, page, sort: sortOption, lean: true});
+
+        //link de paginacion
+         result.prevLink = result.hasPrevPage 
+            ? `/products?page=${result.prevPage}&limit=${limit}` 
+            : null;
+
+        result.nextLink = result.hasNextPage 
+            ? `/products?page=${result.nextPage}&limit=${limit}` 
+            : null;
+
+            return result;
+
+      }
 
   async getProductById(id) {
     return await productModel.findById(id).lean();
