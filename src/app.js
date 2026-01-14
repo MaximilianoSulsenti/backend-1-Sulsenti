@@ -1,25 +1,38 @@
 import express from "express";
 import mongoose from "mongoose";
 import { Server } from "socket.io";
+import {mongoConnect} from "./database/mongoConnection.js";
 import exphbs from "express-handlebars";
 import path from "path";
 import { fileURLToPath } from "url";
+import dotenv from "dotenv";
+import passport from "passport";
+import { initializePassport } from "./config/passport.js";
+
+dotenv.config();
 
 // Managers con mongoose
 import ProductManager from "./managers/ProductManager.js";
 import CartManager from "./managers/CartManager.js";
+import UserManager from "./managers/UserManager.js";
 
 // Routers
 import createProductRouter from "./routes/product.route.js";
 import createCartRouter from "./routes/cart.route.js";
 import createViewsRouter from "./routes/view.route.js";
+import createUserRouter from "./routes/user.route.js";
+import sessionRouter from "./routes/sessions.route.js";
 
+// Definiciones de __dirname y __filename en ES Modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+initializePassport();
+app.use(passport.initialize());
 
 // Archivos estáticos
 app.use(express.static(path.join(__dirname, "public")));
@@ -39,29 +52,25 @@ app.engine("handlebars", hbs.engine);
 app.set("view engine", "handlebars");
 app.set("views", path.join(__dirname, "views"));
 
-// conexion a Mongo DB
-mongoose.connect("mongodb+srv://sulsentimaximiliano_db_user:TbfYqIvysujWgrp8@cluster0.tscagks.mongodb.net/")
-.then(() => {
-    console.log("Conectado a MongoDB");
-}).catch(err => {
-    console.error("Error al conectar a MongoDB:", err);
-});
-
 const productManager = new ProductManager();
 const cartManager = new CartManager();
+const userManager = new UserManager();
 
 // conexion del servidor
 const PORT = 8080;
-const httpServer = app.listen(PORT, () =>
+const httpServer = app.listen(PORT, () =>{
   console.log(`Servidor escuchando en puerto ${PORT}`)
-);
+  mongoConnect().then(() => console.log("Conectado a la base de datos MongoDB"));
+});
 
 const io = new Server(httpServer);
 
 // rutas con los managers correspondientes
 app.use("/api/products", createProductRouter(productManager, io));
 app.use("/api/carts", createCartRouter(cartManager, productManager));
+app.use("/api/users", createUserRouter(userManager));
 app.use("/", createViewsRouter(productManager, cartManager));
+app.use("/api/sessions", sessionRouter);
 
  // Socket.io para productos en tiempo real
  io.on("connection", async socket => {
