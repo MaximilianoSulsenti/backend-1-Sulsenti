@@ -5,11 +5,10 @@ import {mongoConnect} from "./database/mongoConnection.js";
 import exphbs from "express-handlebars";
 import path from "path";
 import { fileURLToPath } from "url";
-import dotenv from "dotenv";
 import passport from "passport";
 import { initializePassport } from "./config/passport.js";
+import { env } from "./config/environment.js";
 
-dotenv.config();
 
 // Managers con mongoose
 import ProductManager from "./managers/ProductManager.js";
@@ -57,7 +56,7 @@ const cartManager = new CartManager();
 const userManager = new UserManager();
 
 // conexion del servidor
-const PORT = 8080;
+const PORT = env.PORT;
 const httpServer = app.listen(PORT, () =>{
   console.log(`Servidor escuchando en puerto ${PORT}`)
   mongoConnect().then(() => console.log("Conectado a la base de datos MongoDB"));

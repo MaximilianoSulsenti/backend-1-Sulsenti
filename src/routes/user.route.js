@@ -1,14 +1,22 @@
 import { Router } from "express";
 import passport from "passport";
+import { authorizeRole } from "../middlewares/auth.js";
 
 export default function createUserRouter(userManager) {
     const router = Router();
 
     // GET para obtener todos los usuarios o un usuario por ID
-    router.get("/", async (req, res) => {
+    router.get("/", passport.authenticate("current", { session: false }), authorizeRole("admin"),
+     async (req, res) => {
         try {
             const users = await userManager.getUsers();
-            res.status(200).json({ status: "success", payload: users });
+
+            const usersWithoutPassword = users.map(u => {
+            const { password, ...rest } = u;
+           return rest;
+           });
+
+            res.status(200).json({ status: "success", payload: usersWithoutPassword });
         } catch (error) {
             res.status(500).json({ status: "error", error: error.message });
         }
@@ -26,12 +34,18 @@ export default function createUserRouter(userManager) {
         }
     });
 
-    // POST para crear un nuevo usuario con Passport
-   router.post("/register", passport.authenticate("register", { session: false }),
-         async (req, res) => {
-         res.status(201).json({ status: "success", payload: req.user });
-    });
-
+    // POST para crear un nuevo usuario con Passport 
+    router.post("/register", (req, res, next) => {
+       passport.authenticate("register", { session: false }, (err, user, info) => {
+         if (err)
+           return res.status(500).json({ status: "error", error: err.message });
+     
+         if (!user)
+           return res.status(400).json({ status: "error", error: info.message || "Error en el registro" });
+     
+         res.status(201).json({status: "success",message: "Usuario registrado correctamente", });
+       })(req, res, next);
+     });
 
     // PUT para actualizar un usuario existente
     router.put("/:uid", async (req, res) => {

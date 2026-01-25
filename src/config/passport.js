@@ -19,7 +19,7 @@ export function initializePassport() {
         try {
             const user = await userModel.findOne({ email: username });
             if (user) 
-                return done(null, false, { message: "Usuario ya registrado" });
+                return done(null, false, { message: "El usuario ya existe" });
 
             const hashedPassword = createHash(password);
             const newUser = await userModel.create({

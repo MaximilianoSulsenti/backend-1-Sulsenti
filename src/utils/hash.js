@@ -10,3 +10,4 @@ export function isValidPassword(password, hashedPassword) {
 
     return bcrypt.compareSync(password, hashedPassword);
 }
+
